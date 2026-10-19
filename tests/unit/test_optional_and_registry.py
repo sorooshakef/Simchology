@@ -56,3 +56,18 @@ def test_list_methods_table():
     assert {"method", "family", "installed", "install"} <= set(table.columns)
     assert {"jaccard", "tfidf", "bm25", "lsa", "lda"} <= set(table["method"])
     assert get_method_class("tfidf").info.requires_corpus_fit
+
+
+def test_missing_packages_and_injected_clients(monkeypatch):
+    import simchology.methods.base as base
+
+    monkeypatch.setattr(base, "is_available", lambda module: module not in ("ollama", "torch"))
+    with pytest.raises(MissingDependencyError) as err:
+        make_method("cross_encoder")
+    message = str(err.value)
+    assert "torch, which is not installed" in message
+    assert message.count("pip install -e") == 1 and 'pip install -e ".[finetune]"' in message
+    with pytest.raises(MissingDependencyError, match="ollama"):
+        make_method("llm")
+    # a client object supplied by the caller replaces the client library
+    assert make_method("llm", {"client": object()}).name == "llm"

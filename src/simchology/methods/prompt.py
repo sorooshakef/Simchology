@@ -66,6 +66,12 @@ class _PromptJudge(PairMethod):
     defaults = dict(_SHARED_DEFAULTS)
     _backend_name = "llm"
 
+    @classmethod
+    def missing_modules(cls, params: dict | None = None) -> list[str]:
+        # A client object passed in by the caller replaces the client library.
+        if params and params.get("client") is not None:
+            return []
+        return super().missing_modules(params)
     def __init__(self, **params: Any) -> None:
         super().__init__(**params)
         p = self.params

@@ -181,7 +181,8 @@ class SimilarityMethod(ABC):
 
     # -- helpers -----------------------------------------------------------------------
     @classmethod
-    def missing_modules(cls) -> list[str]:
+    def missing_modules(cls, params: dict | None = None) -> list[str]:
+        """Optional modules this method needs (with these ``params``) that are not installed."""
         return [m for m in cls.info.requires_modules if not is_available(m)]
 
     def __repr__(self) -> str:

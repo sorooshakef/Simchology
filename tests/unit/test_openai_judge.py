@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from conftest import requires
 
 import simchology as sim
 from simchology.exceptions import (
@@ -36,7 +37,7 @@ def _completion(content, positive, with_logprobs=True):
 
 def _http_lib():
     """openai>=3 uses httpx2 for its http_client; older versions use httpx."""
-    import openai
+    openai = pytest.importorskip("openai")  # the mock transport goes through the real client
 
     major = int(openai.__version__.split(".")[0])
     if major >= 3:
@@ -118,6 +119,7 @@ def test_model_is_required():
         judge.score_pairs(["a"], ["b"])
 
 
+@requires("openai")  # the API key is only checked when the real openai client is built
 def test_missing_api_key_for_hosted_api(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     judge = OpenAICompatibleJudge(model="gpt-x")

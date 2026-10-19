@@ -117,9 +117,13 @@ def test_pair_dataset_and_features():
         PairDataset(feats, [0])
 
 
-def test_fit_requires_coded_pairs(small_pairs):
+def test_fit_requires_coded_pairs():
     with pytest.raises(ConfigurationError, match="coded"):
         CrossEncoderMethod().fit()
+
+
+@requires("torch", "transformers", "accelerate")  # without them, the missing-package error comes first
+def test_assess_requires_coded_pairs(small_pairs):
     with pytest.raises(ConfigurationError, match="coded"):
         sim.assess(small_pairs, method="cross_encoder", verbose=False)
 

@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from .._optional import install_hint, install_message, is_available
+from .._optional import PIP_NAME, install_hint, install_message, is_available
 from ..data.validation import did_you_mean
 from ..exceptions import ConfigurationError
 from .base import SimilarityMethod
@@ -80,16 +80,22 @@ def make_method(spec: Any, params: dict | None = None) -> SimilarityMethod:
             raise ConfigurationError("method_params cannot be combined with a method instance.")
         return spec
     cls = spec if isinstance(spec, type) and issubclass(spec, SimilarityMethod) else get_method_class(spec)
-    missing = cls.missing_modules()
+    missing = cls.missing_modules(params)
     if missing:
         from ..exceptions import MissingDependencyError
 
-        hints = sorted({install_message(m) for m in missing})
+        names = ", ".join(PIP_NAME.get(m, m) for m in missing)
         raise MissingDependencyError(
-            f"The method '{cls.info.name}' needs {', '.join(missing)}. Install with:\n"
-            + "\n".join(hints)
+            f"The method '{cls.info.name}' needs {names}, which "
+            f"{'is' if len(missing) == 1 else 'are'} not installed. Install with:\n"
+            + install_message(missing[0], _extra(cls))
         )
     return cls(**params)
+
+
+def _extra(cls: type[SimilarityMethod]) -> str | None:
+    """The dependency group (pyproject extra) that provides everything ``cls`` needs."""
+    return cls.info.extras[0] if cls.info.extras else None
 
 
 def list_methods(installed_only: bool = False) -> pd.DataFrame:
@@ -109,7 +115,7 @@ def list_methods(installed_only: bool = False) -> pd.DataFrame:
             "output": info.native_output,
             "cost": info.cost_tier,
             "installed": not missing,
-            "install": "" if not missing else "; ".join(sorted({install_hint(m) for m in missing})),
+            "install": "" if not missing else install_hint(missing[0], _extra(cls)),
         })
     df = pd.DataFrame(rows)
     order = ["string", "lexical", "topic", "static", "alignment", "contextual", "supervised", "prompt"]
