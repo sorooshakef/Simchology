@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from .._optional import require
+from .._optional import install_hint, require
 from .._utils.logging import note
 from ..config import DEFAULT_MODELS
 from ..exceptions import ConfigurationError
@@ -119,7 +119,7 @@ class Segmenter:
                 note(
                     f"Only {share:.0%} of the responses end with punctuation. Sentence "
                     "splitting relies on punctuation; consider segment='sat' "
-                    '(pip install "simchology[sat]"), which does not.',
+                    f"({install_hint('wtpsplit')}), which does not.",
                     self.verbose,
                 )
 

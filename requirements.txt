@@ -1,0 +1,7 @@
+# Simchology's dependencies are declared in pyproject.toml (the single source of truth).
+# This file is a shortcut for `pip install -r requirements.txt`: it installs Simchology
+# from this folder together with the dependencies of the "recommended" set of methods.
+# Run it from this folder. Other choices (edit the line below or run directly):
+#   pip install -e .           core methods only (string, lexical, topic models)
+#   pip install -e ".[all]"    everything, incl. fine-tuning and local LLMs
+-e .[recommended]

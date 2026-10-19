@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from .._optional import install_hint, is_available
+from .._optional import install_hint, install_message, is_available
 from ..data.validation import did_you_mean
 from ..exceptions import ConfigurationError
 from .base import SimilarityMethod
@@ -84,10 +84,10 @@ def make_method(spec: Any, params: dict | None = None) -> SimilarityMethod:
     if missing:
         from ..exceptions import MissingDependencyError
 
-        hints = sorted({install_hint(m) for m in missing})
+        hints = sorted({install_message(m) for m in missing})
         raise MissingDependencyError(
-            f"The method '{cls.info.name}' needs {', '.join(missing)}. Install with:\n    "
-            + "\n    ".join(hints)
+            f"The method '{cls.info.name}' needs {', '.join(missing)}. Install with:\n"
+            + "\n".join(hints)
         )
     return cls(**params)
 

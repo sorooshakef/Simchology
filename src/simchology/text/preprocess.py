@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 
+from .._optional import install_hint
 from .._utils.logging import note
 from ..exceptions import ConfigurationError, MissingDependencyError
 from .normalize import Normalizer
@@ -118,7 +119,7 @@ class Preprocessor:
             if self._backend == "regex" and cfg.unit == "lemma":
                 raise MissingDependencyError(
                     "Lemmatisation (unit='lemma') needs spaCy and the pipeline "
-                    f"{self.spacy_model_name!r}: pip install \"simchology[nlp]\" and "
+                    f"{self.spacy_model_name!r}: {install_hint('spacy')} and "
                     f"python -m spacy download {self.spacy_model_name}"
                 )
         return self._backend
@@ -185,7 +186,7 @@ class Preprocessor:
         if unit == "lemma" and self.backend != "spacy":
             raise MissingDependencyError(
                 "Lemmatisation (unit='lemma') needs spaCy and the pipeline "
-                f"{self.spacy_model_name!r}: pip install \"simchology[nlp]\" and "
+                f"{self.spacy_model_name!r}: {install_hint('spacy')} and "
                 f"python -m spacy download {self.spacy_model_name}"
             )
         return [a.units(unit) for a in self.analyze(texts)]

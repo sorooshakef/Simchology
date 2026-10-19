@@ -31,16 +31,33 @@ The result is your DataFrame with one new column, `predicted_similarity`: 0/1 fo
 
 ## Installation
 
+Simchology is installed from this folder (it is not yet published on PyPI). All
+dependencies are declared in `pyproject.toml`, so one command installs Simchology
+together with everything it needs. Python 3.10 or newer is required.
+
 ```bash
-pip install simchology                    # string, lexical and topic-model methods
-pip install "simchology[recommended]"     # + spaCy, sentence embeddings, BERTScore, WMD
-pip install "simchology[all]"             # everything, incl. fine-tuning and local LLMs
+cd Simchology                      # the folder containing pyproject.toml
+python -m venv .venv               # a separate environment (recommended)
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+pip install -r requirements.txt    # recommended set: spaCy, sentence embeddings, BERTScore, WMD
 ```
 
-Individual extras: `nlp` (spaCy), `sat` (robust sentence splitting), `embeddings`
+`requirements.txt` is a shortcut for `pip install -e ".[recommended]"`. To install
+less or more:
+
+```bash
+pip install -e .                   # core only: string, lexical and topic-model methods
+pip install -e ".[all]"            # everything, incl. fine-tuning and local LLMs
+pip install -e ".[nlp,finetune]"   # any combination of the groups below
+```
+
+Dependency groups: `nlp` (spaCy), `sat` (robust sentence splitting), `embeddings`
 (torch, transformers, sentence-transformers), `static` (gensim word vectors), `wmd`,
 `finetune` (cross-encoders, LoRA), `llm` (Ollama), `api` (OpenAI-compatible servers),
-`systemone` (Jev-style zero-shot classifiers). Quote the brackets in zsh/macOS shells.
+`systemone` (Jev-style zero-shot classifiers). Keep the quotes around `".[...]"`
+(zsh, the default shell on macOS, otherwise misreads the brackets). If you use a method
+whose dependencies are missing, Simchology tells you the exact command to install them.
 
 For lemmatisation and word vectors, install the spaCy pipeline of your language once:
 
@@ -161,7 +178,7 @@ Neural, supervised and prompt-based methods receive the texts as written.
 
 Responses are split into sentences and the best-matching sentence counts
 (`aggregate="max"`; or `"mean"`). If your participants do not use reliable punctuation,
-use `segment="sat"` (neural sentence segmentation, `pip install "simchology[sat]"`).
+use `segment="sat"` (neural sentence segmentation; install with `pip install -e ".[sat]"`).
 
 ## Supervised pair scoring (fine-tuning)
 

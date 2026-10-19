@@ -4,7 +4,7 @@ import sys
 import pytest
 
 import simchology as sim
-from simchology._optional import install_hint, is_available, require
+from simchology._optional import install_hint, install_message, is_available, require
 from simchology.exceptions import ConfigurationError, MissingDependencyError
 from simchology.methods.registry import get_method_class, make_method, resolve_name
 
@@ -16,9 +16,14 @@ def test_require_missing_module_gives_install_hint():
     assert "The test feature" in str(err.value)
 
 
-def test_install_hint_uses_extras():
-    assert install_hint("ot") == 'pip install "simchology[wmd]"'
-    assert install_hint("spacy") == 'pip install "simchology[nlp]"'
+def test_install_hint_names_the_packages_of_the_extra():
+    assert install_hint("ot") == "pip install POT"
+    assert install_hint("spacy") == "pip install spacy"
+    # read from pyproject.toml via the package metadata, including nested extras
+    finetune = install_hint("peft").split()[2:]
+    assert {"torch", "transformers", "accelerate", "peft"} <= set(finetune)
+    assert install_hint("definitely_not_a_module_xyz") == "pip install definitely_not_a_module_xyz"
+    assert 'pip install -e ".[wmd]"' in install_message("ot")
     assert is_available("numpy")
 
 

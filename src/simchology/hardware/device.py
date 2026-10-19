@@ -164,9 +164,11 @@ def detect_hardware() -> HardwareReport:
         cuda_build = torch.version.cuda is not None
         devices = _torch_devices(notes)
     else:
+        from .._optional import install_hint
+
         notes.append(
             "torch is not installed; neural methods are unavailable. "
-            'Install them with: pip install "simchology[embeddings]"'
+            f"Install them with: {install_hint('torch')}"
         )
     devices.append(_cpu_info())
     return HardwareReport(

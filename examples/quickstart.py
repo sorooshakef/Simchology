@@ -1,8 +1,7 @@
 """Simchology quick start: score how much of each reference "info" a participant recalled.
 
 Run with:  python examples/quickstart.py
-Only the core install is needed (pip install simchology); neural methods are tried if
-their extras are installed.
+Only the core methods are used, so `pip install -e .` in the Simchology folder suffices.
 """
 
 import simchology as sim
