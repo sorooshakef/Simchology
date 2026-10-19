@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "simchology"
+dynamic = ["version"]
+description = "Text similarity assessment for psychologists: many NLP methods, one interface."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ email = "s.akef@iwm-tuebingen.de" }]
+keywords = ["psychology", "text similarity", "nlp", "coding", "bertscore", "cross-encoder"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "scipy>=1.10",
+  "scikit-learn>=1.3",
+  "rapidfuzz>=3.6",
+  "psutil>=5.9",
+  "tqdm>=4.66",
+  "joblib>=1.3",
+  "packaging>=23",
+  "typing_extensions>=4.7",
+]
+
+[project.optional-dependencies]
+nlp = ["spacy>=3.7,<4"]
+sat = ["wtpsplit>=2.1", "torch>=2.2"]
+embeddings = [
+  "torch>=2.2",
+  "transformers>=4.48,<6",
+  "sentence-transformers>=3.0",
+  "huggingface-hub>=0.23",
+  "safetensors>=0.4",
+]
+static = ["gensim>=4.4"]
+wmd = ["POT>=0.9"]
+finetune = ["simchology[embeddings]", "accelerate>=0.26", "peft>=0.11"]
+llm = ["ollama>=0.4", "httpx>=0.25"]
+api = ["openai>=1.40", "httpx>=0.25"]
+systemone = ["httpx>=0.25"]
+recommended = ["simchology[nlp,embeddings,wmd]"]
+all = ["simchology[nlp,sat,embeddings,static,wmd,finetune,llm,api,systemone]"]
+test = ["pytest>=8", "pytest-timeout>=2.2"]
+dev = ["simchology[all,test]", "ruff>=0.5"]
+
+[tool.hatch.version]
+path = "src/simchology/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/simchology"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers -m 'not slow and not network and not gpu and not ollama and not systemone'"
+timeout = 600
+filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+  "slow: trains or runs neural models (takes more than a few seconds)",
+  "network: downloads models or needs internet access",
+  "gpu: needs a CUDA or MPS device",
+  "ollama: needs a running Ollama server",
+  "systemone: needs a running System One server (e.g. Kev)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B028", "B905"]
