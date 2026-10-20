@@ -1,12 +1,10 @@
 """Prompt-based inference: an LLM judges each (response, reference) pair.
 
-* ``llm`` (default) - a local model served by Ollama (https://ollama.com). Texts never
-  leave the computer.
-* ``openai_compatible`` - any OpenAI-compatible chat endpoint. Local servers (LM Studio,
-  vLLM, llama.cpp on localhost) work directly; hosted APIs need ``allow_remote=True``.
+The ``llm`` method asks a local model served by Ollama (https://ollama.com), so texts
+never leave the computer (an Ollama server on another machine needs ``allow_remote=True``).
 
-Both ask a fixed question (yes/no or a rating) after a task description that users can
-replace with their own coding manual (``instructions=...``). With ``mode="few_shot"``,
+The model is asked a fixed question (yes/no or a rating) after a task description that
+users can replace with their own coding manual (``instructions=...``). With ``mode="few_shot"``,
 ``n_examples`` coded training pairs are shown as worked examples; they never come from
 the held-out test pairs. Few-shot prompting is not guaranteed to beat zero-shot
 prompting, so compare both on your coded data.
@@ -420,71 +418,3 @@ class OllamaJudge(_PromptJudge):
     def describe(self) -> str:
         mode = "few-shot" if self.params["mode"] == "few_shot" else "zero-shot"
         return f"{mode} judgments of the local LLM {self.params['model']} (Ollama, temperature {self.params['temperature']:g})"
-
-
-@register_method
-class OpenAICompatibleJudge(_PromptJudge):
-    """Ask a model behind an OpenAI-compatible chat API.
-
-    Local servers (LM Studio, vLLM, llama.cpp, Ollama's ``/v1``) are used directly; hosted
-    APIs (OpenAI and others) need ``allow_remote=True`` because the texts leave the
-    computer. Hosted models are not fully reproducible and may be retired.
-
-    Parameters
-    ----------
-    model:
-        Model name (required).
-    base_url:
-        Server URL including ``/v1``, e.g. ``"http://localhost:1234/v1"``; None = OpenAI.
-    api_key:
-        API key (default: environment variable ``OPENAI_API_KEY``).
-    Other parameters as for the ``llm`` method.
-    """
-
-    info = MethodInfo(
-        name="openai_compatible", family="prompt",
-        description="judgments of an LLM behind an OpenAI-compatible API",
-        symmetric=False, native_output="probability", score_range=(0.0, 1.0), granularity="pair",
-        segment_default=False, preprocessing="light", cost_tier="heavy", extras=("api",),
-        requires_modules=("openai",), deterministic=False, uses_training_pairs=True,
-        aliases=("openai", "api_llm"),
-    )
-    defaults = {**_SHARED_DEFAULTS, "model": None, "base_url": None, "api_key": None, "timeout": 120}
-    _backend_name = "openai_compatible"
-
-    def __init__(self, **params: Any) -> None:
-        super().__init__(**params)
-        self._backend = None
-
-    @property
-    def backend(self):
-        if self._backend is None:
-            from ..llm.openai_backend import OpenAICompatibleBackend
-
-            self._backend = OpenAICompatibleBackend(
-                self.params["model"], base_url=self.params["base_url"], api_key=self.params["api_key"],
-                timeout=self.params["timeout"], client=self.params["client"],
-                allow_remote=self.runtime.allow_remote,
-            )
-        return self._backend
-
-    def _ensure_ready(self, left, right):
-        _ = self.backend
-
-    def _cache_identity(self):
-        return {"model": self.params["model"], "base_url": self.params["base_url"],
-                "options": {"temperature": self.params["temperature"], "seed": self.seed}}
-
-    def _complete(self, messages, kind):
-        lo, hi = self.scale
-        schema = rating_schema(lo, hi) if kind == "rating" else binary_schema()
-        return self.backend.chat(messages, schema=schema,
-                                 temperature=float(self.params["temperature"]), seed=self.seed)
-
-    def model_ids(self) -> dict[str, str]:
-        return {"llm": f"{self.params['model']} @ {self.params['base_url'] or 'https://api.openai.com/v1'}"}
-
-    def describe(self) -> str:
-        mode = "few-shot" if self.params["mode"] == "few_shot" else "zero-shot"
-        return f"{mode} judgments of {self.params['model']} via an OpenAI-compatible API"
-

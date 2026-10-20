@@ -29,7 +29,7 @@ def test_install_hint_names_the_packages_of_the_extra():
 
 def test_import_does_not_load_heavy_packages():
     code = ("import sys, simchology; heavy = [m for m in ('torch', 'transformers', 'spacy', 'ot', "
-            "'sentence_transformers', 'ollama', 'openai') if m in sys.modules]; print(heavy); "
+            "'sentence_transformers', 'ollama') if m in sys.modules]; print(heavy); "
             "assert not heavy, heavy; simchology.list_methods()")
     subprocess.run([sys.executable, "-c", code], check=True)
 

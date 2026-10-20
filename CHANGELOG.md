@@ -6,7 +6,7 @@ First version.
 
 - One interface (`assess`, `SimilarityAssessor`) for string-based, lexical, topic-model,
   static/contextual embedding, alignment-based, supervised (cross-encoder, LoRA) and
-  prompt-based (Ollama, OpenAI-compatible, System One) similarity methods.
+  prompt-based (Ollama, System One) similarity methods.
 - Binary or gradient output; coded data used for fine-tuning, thresholds and held-out
   evaluation with leakage-free (response-grouped) splits.
 - Dissimilar-pair baselines (coded negatives, cross-group and random re-pairings),

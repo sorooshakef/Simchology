@@ -107,12 +107,12 @@ def test_prob_yes_from_dict_logprobs():
     assert prob_yes_from_logprobs(lps) == pytest.approx(0.7 / 0.9)
 
 
-def test_prob_yes_from_objects_and_openai_container():
+def test_prob_yes_from_objects():
+    """The Ollama client returns pydantic objects rather than dicts."""
     tops = [SimpleNamespace(token=" no", logprob=math.log(0.75)),
             SimpleNamespace(token=" yes", logprob=math.log(0.25))]
     pos = SimpleNamespace(token=" no", logprob=math.log(0.75), top_logprobs=tops)
     assert prob_yes_from_logprobs([pos]) == pytest.approx(0.25)
-    assert prob_yes_from_logprobs(SimpleNamespace(content=[pos])) == pytest.approx(0.25)
 
 
 def test_prob_yes_none_without_answer_token():

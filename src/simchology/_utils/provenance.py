@@ -13,7 +13,7 @@ from .._version import __version__
 _TRACKED_PACKAGES = (
     "numpy", "pandas", "scipy", "scikit-learn", "rapidfuzz", "spacy", "wtpsplit", "torch",
     "transformers", "sentence-transformers", "gensim", "POT", "peft", "accelerate", "ollama",
-    "openai", "httpx",
+    "httpx",
 )
 
 

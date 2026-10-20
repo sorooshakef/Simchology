@@ -33,7 +33,6 @@ EXTRA_FOR: dict[str, str] = {
     "peft": "finetune",
     "accelerate": "finetune",
     "ollama": "llm",
-    "openai": "api",
     "httpx": "systemone",
 }
 

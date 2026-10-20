@@ -1,6 +1,6 @@
 """JSON schemas for structured LLM output and robust parsing of the answers.
 
-Works with responses of the Ollama and OpenAI clients: token log-probabilities may be
+Token log-probabilities, as returned by the Ollama client, may be (subscriptable)
 pydantic objects or plain dicts with ``token``, ``logprob`` and ``top_logprobs``.
 """
 
@@ -117,12 +117,7 @@ def _clean_token(token: Any) -> str:
 
 
 def _positions(logprobs: Any) -> list:
-    """The per-token entries, whatever the client's container looks like."""
-    if logprobs is None:
-        return []
-    content = _get(logprobs, "content") if not isinstance(logprobs, Sequence) else None
-    if content is not None:
-        logprobs = content
+    """The per-token entries (a sequence, one entry per generated token)."""
     return list(logprobs) if isinstance(logprobs, Sequence) else []
 
 

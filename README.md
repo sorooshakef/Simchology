@@ -54,9 +54,9 @@ pip install -e ".[nlp,finetune]"   # any combination of the groups below
 
 Dependency groups: `nlp` (spaCy), `sat` (robust sentence splitting), `embeddings`
 (torch, transformers, sentence-transformers), `static` (gensim word vectors), `wmd`,
-`finetune` (cross-encoders, LoRA), `llm` (Ollama), `api` (OpenAI-compatible servers),
-`systemone` (Jev-style zero-shot classifiers). Keep the quotes around `".[...]"`
-(zsh, the default shell on macOS, otherwise misreads the brackets). If you use a method
+`finetune` (cross-encoders, LoRA), `llm` (Ollama), `systemone` (Jev-style zero-shot
+classifiers). Keep the quotes around `".[...]"` (zsh, the default shell on macOS,
+otherwise misreads the brackets). If you use a method
 whose dependencies are missing, Simchology tells you the exact command to install them.
 
 For lemmatisation and word vectors, install the spaCy pipeline of your language once:
@@ -101,7 +101,7 @@ sim.list_methods()        # all methods, with what they need and whether they ar
 | contextual embeddings | `sbert`, `hf_embedding`, `llm_embedding` | no | moderate | meaning, paraphrases |
 | alignment | `bertscore` | no | moderate | paraphrases, with token-level explanations |
 | supervised | `cross_encoder`, `lora_classifier`, `pretrained_cross_encoder` | yes (except pretrained) | heavy | *your* operationalisation of similarity |
-| prompt-based | `llm` (Ollama), `openai_compatible`, `systemone` (Jev/Kev) | optional (few-shot) | heavy | complex coding manuals, no training data |
+| prompt-based | `llm` (Ollama), `systemone` (Jev/Kev) | optional (few-shot) | heavy | complex coding manuals, no training data |
 
 Not sure? Compare them on your coded data:
 
@@ -216,7 +216,8 @@ re-implementation such as [Kev](https://github.com/jaredpalmer/kev), which you s
 e.g. `python -m kev.serve --run jaredpalmer/kev-0.8b --port 8009`.
 
 **Privacy.** Participant texts never leave your computer unless you explicitly pass
-`allow_remote=True` (needed for hosted APIs such as OpenAI or Jev).
+`allow_remote=True` (needed for hosted Jev via `systemone`, or an Ollama server running on
+another computer).
 
 ## Hardware checks
 

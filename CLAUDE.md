@@ -82,9 +82,9 @@ Supervised methods check inside `fit()` after `max_length` is known; the assesso
 checks inference once for non-light methods. `configure_environment()` runs on
 `import simchology` (e.g. `PYTORCH_ENABLE_MPS_FALLBACK` must be set before torch loads).
 
-**Prompt-based** (`llm/`, `methods/prompt.py`, `methods/systemone.py`): Ollama is the
-default LLM runtime; `systemone` speaks Jev's System One protocol and defaults to a
-local Kev server. `llm/netpolicy.py` blocks non-local hosts unless `allow_remote=True`.
+**Prompt-based** (`llm/`, `methods/prompt.py`, `methods/systemone.py`): `llm` prompts a
+model through Ollama's native API (the only LLM runtime); `systemone` speaks Jev's
+System One protocol and defaults to a local Kev server. `llm/netpolicy.py` blocks non-local hosts unless `allow_remote=True`.
 Passing a `client` object in `method_params` replaces the client library (tests use fakes).
 
 **Persistence** (`io.py`): an assessor is a directory (JSON + npz + method artefacts),
@@ -94,7 +94,7 @@ written and read without pickle; thresholds, scalers, baselines and reports impl
 ## Conventions that are easy to get wrong
 
 - Never import optional heavy packages (torch, transformers, sentence_transformers,
-  spacy, ot, gensim, peft, ollama, openai, httpx, wtpsplit) at module level; call
+  spacy, ot, gensim, peft, ollama, httpx, wtpsplit) at module level; call
   `_optional.require(module, feature=..., extra=...)` inside functions. A subprocess
   test asserts `import simchology` does not load torch.
 - New dependencies go into the right extra in `pyproject.toml`, and the import name into
@@ -118,4 +118,7 @@ written and read without pickle; thresholds, scalers, baselines and reports impl
   `SYSTEMONE_URL`).
 - Design decisions made with the project owner: local-first (remote APIs only with
   `allow_remote=True`), baseline-quantile thresholds by default, no ensemble/combination
-  rules.
+  rules. An `openai_compatible` method was removed on purpose: OpenAI-compatible
+  endpoints cannot switch off reasoning, so thinking models (e.g. `qwen3.5:4b` via
+  Ollama's `/v1`) took 20–65 s per judgment versus ~0.5 s through `llm` (`think=False`),
+  and for local models it duplicated `llm`.

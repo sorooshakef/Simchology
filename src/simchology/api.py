@@ -125,7 +125,8 @@ def assess(
     check_hardware:
         ``"warn"`` (default), ``"error"`` or ``"off"``.
     allow_remote:
-        Allow sending texts to non-local servers (hosted LLM APIs). Off by default.
+        Allow sending texts to non-local servers (hosted Jev via ``systemone``, or an
+        Ollama server on another computer). Off by default.
     keep_scores:
         Also add the raw ``similarity_score`` (and the threshold used).
     return_assessor:
