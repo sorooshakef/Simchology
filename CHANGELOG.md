@@ -14,6 +14,10 @@ First version.
   baseline-relative score scaling.
 - Ending-perturbation augmentation and robustness (flip-rate) evaluation for
   supervised methods.
+- `lora_classifier` works with vision-language backbones such as Qwen3.5: labels reach
+  models whose `forward` takes them only via `**kwargs`, the padding token is also set in
+  the nested text config (needed once a saved model is loaded), and the vision encoder
+  gets no LoRA adapters (needs peft >= 0.14).
 - Hardware detection and memory/runtime estimates with warnings before expensive steps.
 - `compare_methods`, explanations (token alignments), `describe()` for methods sections,
   save/load without pickle.

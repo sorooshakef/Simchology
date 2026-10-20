@@ -123,6 +123,22 @@ def test_lora_classifier_round_trip(subset, tiny_qwen3_dir, tmp_path):
 
 
 @pytest.mark.slow
+def test_lora_classifier_qwen3_5(subset, tiny_qwen3_5_dir, tmp_path):
+    """Qwen3.5 takes labels only via **kwargs and has a vision encoder that needs no adapters."""
+    out, a = _assess(subset, method="lora_classifier", output="binary", coded=subset,
+                     label_col="label", method_params=_params(tiny_qwen3_5_dir, max_length=96))
+    assert str(out["predicted_similarity"].dtype) == "Int8"
+    assert a.report_ is not None and "f1" in a.report_.metrics
+    lora = [n for n, _ in a.method_.model_.named_parameters() if "lora_" in n]
+    assert lora and not [n for n in lora if "visual" in n]
+    scores = a.score(subset).to_numpy()
+    b = sim.load(a.save(tmp_path / "qwen3_5"))  # no Trainer involved: padding id must be set
+    assert np.allclose(b.score(subset).to_numpy(), scores, atol=_tolerance(b))
+    c = sim.load(b.save(tmp_path / "qwen3_5_full"))  # merged model is saved in full
+    assert np.allclose(c.score(subset).to_numpy(), scores, atol=_tolerance(c))
+
+
+@pytest.mark.slow
 def test_lora_classifier_regression(subset, tiny_qwen3_dir):
     out, a = _assess(subset, method="lora_classifier", output="gradient", coded=subset,
                      label_col="label_gradient", method_params=_params(tiny_qwen3_dir, max_length=64))

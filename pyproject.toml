@@ -41,7 +41,7 @@ embeddings = [
 ]
 static = ["gensim>=4.4"]
 wmd = ["POT>=0.9"]
-finetune = ["simchology[embeddings]", "accelerate>=0.26", "peft>=0.11"]
+finetune = ["simchology[embeddings]", "accelerate>=0.26", "peft>=0.14"]
 llm = ["ollama>=0.4", "httpx>=0.25"]
 systemone = ["httpx>=0.25"]
 recommended = ["simchology[nlp,embeddings,wmd]"]

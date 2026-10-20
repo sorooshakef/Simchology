@@ -135,6 +135,43 @@ def tiny_qwen3_dir(tmp_path_factory, tiny_vocab_file) -> str:
 
 
 @pytest.fixture(scope="session")
+def tiny_qwen3_5_dir(tmp_path_factory, tiny_vocab_file) -> str:
+    """A tiny Qwen3.5 vision-language model (linear + full attention layers, vision encoder).
+
+    Saved as ``Qwen3_5ForConditionalGeneration``, like the checkpoints on the Hugging Face
+    hub. Its sequence-classification ``forward`` takes ``labels`` only via ``**kwargs``, and
+    reads the padding id from the nested text config, which (as on the hub) is unset.
+    """
+    pytest.importorskip("torch")
+    transformers = pytest.importorskip("transformers")
+    from transformers.models.auto.modeling_auto import (
+        MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES,
+    )
+
+    if "qwen3_5" not in MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES:
+        pytest.skip("this transformers version has no Qwen3.5 sequence classifier")
+    import torch
+
+    torch.manual_seed(0)
+    tok = transformers.BertTokenizerFast(vocab_file=tiny_vocab_file, do_lower_case=True)
+    cfg = transformers.Qwen3_5Config(
+        text_config=dict(
+            vocab_size=tok.vocab_size, hidden_size=32, num_hidden_layers=2, num_attention_heads=2,
+            num_key_value_heads=1, head_dim=16, intermediate_size=64, max_position_embeddings=256,
+            layer_types=["linear_attention", "full_attention"], linear_conv_kernel_dim=4,
+            linear_key_head_dim=8, linear_value_head_dim=8, linear_num_key_heads=2,
+            linear_num_value_heads=2,  # no pad_token_id, like the hub checkpoints
+        ),
+        vision_config=dict(depth=1, hidden_size=16, intermediate_size=32, num_heads=2,
+                           out_hidden_size=32, patch_size=4, num_position_embeddings=16),
+    )
+    out = tmp_path_factory.mktemp("tiny_qwen3_5")
+    transformers.Qwen3_5ForConditionalGeneration(cfg).save_pretrained(out)
+    tok.save_pretrained(out)
+    return str(out)
+
+
+@pytest.fixture(scope="session")
 def spacy_vectors_nlp(demo_en):
     """A blank English spaCy pipeline with a sentencizer and random 16-d word vectors."""
     spacy = pytest.importorskip("spacy")

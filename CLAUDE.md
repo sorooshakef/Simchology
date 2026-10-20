@@ -110,10 +110,11 @@ written and read without pickle; thresholds, scalers, baselines and reports impl
   optional package must skip without it (`from conftest import requires`,
   `@requires("torch", ...)`, or `pytest.importorskip`). Mark training-heavy tests
   `@pytest.mark.slow`; live-server tests `ollama`/`systemone`.
-- Support pandas 2 and 3, transformers 4.48+ and 5.x, Python ≥ 3.10. The dev venv has the
-  newest versions (pandas 3 string dtype, transformers 5 `dtype=` instead of
-  `torch_dtype=`, no `logging_dir`); e.g. save string arrays with
-  `np.asarray(values, dtype=str)`, since object arrays cannot be loaded without pickle.
+- Support pandas 2 and 3, transformers 4.48+ and 5.x, peft ≥ 0.14 (`exclude_modules`),
+  Python ≥ 3.10. The dev venv has the newest versions (pandas 3 string dtype,
+  transformers 5 `dtype=` instead of `torch_dtype=`, no `logging_dir`); e.g. save string
+  arrays with `np.asarray(values, dtype=str)`, since object arrays cannot be loaded
+  without pickle.
 - Default models and server URLs live in `config.py` (`DEFAULT_MODELS`, `OLLAMA_HOST`,
   `SYSTEMONE_URL`).
 - Design decisions made with the project owner: local-first (remote APIs only with

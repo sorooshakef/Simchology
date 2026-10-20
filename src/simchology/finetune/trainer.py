@@ -246,6 +246,9 @@ def train_model(
         logging_strategy="epoch" if verbose else "no",
         save_only_model=True,
         gradient_checkpointing=bool(gradient_checkpointing),
+        # Trainer infers label names from forward's signature and drops all other input
+        # columns; models that take labels only via **kwargs (e.g. Qwen3.5) would lose them.
+        label_names=["labels"],
         **runtime_kwargs,
     )
     if gradient_checkpointing:

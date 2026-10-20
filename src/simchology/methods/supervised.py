@@ -380,6 +380,10 @@ class LoRAClassifierMethod(CrossEncoderMethod):
     Parameters (in addition to those of ``cross_encoder``): ``r``, ``alpha``,
     ``dropout`` and ``target_modules`` of the LoRA adapters, ``template`` (with
     ``{response}`` and ``{reference}``) and ``load_in_4bit`` (CUDA + bitsandbytes only).
+
+    Vision-language backbones such as Qwen3.5 work too: with the default
+    ``target_modules="all-linear"`` their vision encoder gets no adapters, since text-only
+    training never updates it.
     """
 
     info = MethodInfo(

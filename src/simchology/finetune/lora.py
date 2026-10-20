@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from .._optional import is_available, require
@@ -24,6 +25,20 @@ def prepare_tokenizer(tokenizer) -> bool:
     return True
 
 
+def set_pad_token_id(model, pad_token_id: int | None) -> None:
+    """Tell the classifier which token is padding, so it finds each sequence's last token.
+
+    Vision-language models (e.g. Qwen3.5) read it from their nested text config, which
+    the top-level ``config.pad_token_id`` does not reach. (During training the transformers
+    Trainer copies it there itself, so a missing value only shows up after loading.)
+    """
+    model.config.pad_token_id = pad_token_id
+    get_text_config = getattr(model.config, "get_text_config", None)
+    text_config = get_text_config() if callable(get_text_config) else None
+    if text_config is not None and text_config is not model.config:
+        text_config.pad_token_id = pad_token_id
+
+
 def _quantization_config(load_in_4bit: bool, device: str):
     if not load_in_4bit:
         return None
@@ -38,6 +53,15 @@ def _quantization_config(load_in_4bit: bool, device: str):
 
     return BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16,
                               bnb_4bit_quant_type="nf4")
+
+
+# Vision encoders of vision-language backbones (e.g. Qwen3.5's ``model.visual``). Text-only
+# training never sends gradients through them, so adapters there only cost memory.
+VISION_MODULES = r"(.*\.)?(visual|vision_tower|vision_model)(\..*)?"
+
+
+def has_vision_modules(model) -> bool:
+    return any(re.fullmatch(VISION_MODULES, name) for name, _ in model.named_modules())
 
 
 def _base_dtype(device: str):
@@ -65,14 +89,18 @@ def build_lora_model(backbone: str, *, num_labels: int, regression: bool, params
     )
     if added:
         model.resize_token_embeddings(len(tokenizer))
-    model.config.pad_token_id = tokenizer.pad_token_id
+    set_pad_token_id(model, tokenizer.pad_token_id)
     if quant is not None:
         model = peft.prepare_model_for_kbit_training(model)
     if params.get("gradient_checkpointing", True):
         model.enable_input_require_grads()
+    target = params["target_modules"]
+    extra_config = {}
+    if isinstance(target, str) and target.lower() == "all-linear" and has_vision_modules(model):
+        extra_config["exclude_modules"] = VISION_MODULES
     config = peft.LoraConfig(
         task_type=peft.TaskType.SEQ_CLS, r=int(params["r"]), lora_alpha=int(params["alpha"]),
-        lora_dropout=float(params["dropout"]), target_modules=params["target_modules"],
+        lora_dropout=float(params["dropout"]), target_modules=target, **extra_config,
     )
     with quiet_transformers():
         model = peft.get_peft_model(model, config)
@@ -93,7 +121,7 @@ def load_lora_model(backbone: str, adapter_dir: Path, *, num_labels: int, regres
     )
     if added_pad_token:
         model.resize_token_embeddings(len(tokenizer))
-    model.config.pad_token_id = tokenizer.pad_token_id
+    set_pad_token_id(model, tokenizer.pad_token_id)
     with quiet_transformers():
         model = peft.PeftModel.from_pretrained(model, str(adapter_dir))
     if merge:

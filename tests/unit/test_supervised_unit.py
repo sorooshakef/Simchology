@@ -191,3 +191,28 @@ def test_resource_requests(tiny_bert_dir, tiny_qwen3_dir):
     lora = LoRAClassifierMethod(backbone=tiny_qwen3_dir)
     lreq = lora.resource_request(80, lora.training_task)
     assert lreq.task == "lora" and lreq.seq_len == 1024 and lreq.gradient_checkpointing
+
+
+@requires("torch", "transformers", "accelerate")
+def test_trainer_keeps_labels_when_forward_takes_them_only_via_kwargs(tiny_bert_dir, monkeypatch):
+    """Trainer infers label_names from forward's signature and drops other columns.
+
+    Qwen3.5's sequence classifier takes ``labels`` only via ``**kwargs``, so the inferred
+    list is empty and the labels would be removed before the forward pass (no loss).
+    ``label_names`` must therefore be set explicitly.
+    """
+    import transformers
+
+    from simchology.finetune.trainer import train_model
+
+    seen = {}
+    monkeypatch.setattr(transformers.Trainer, "train", lambda self, *a, **k: seen.setdefault("args", self.args))
+    tok = transformers.AutoTokenizer.from_pretrained(tiny_bert_dir)
+    model = transformers.AutoModelForSequenceClassification.from_pretrained(tiny_bert_dir, num_labels=2)
+    enc = tok(["giraffes sleep two hours", "the moai are statues"], ["giraffes sleep", "aqueducts"])
+    data = PairDataset(batch_to_features(enc), [1, 0])
+    params = {"epochs": 1, "batch_size": 2, "eval_batch_size": 2, "grad_accum": 1,
+              "learning_rate": 1e-4, "weight_decay": 0.0}
+    train_model(model, tok, data, None, kind="classification", params=params, device="cpu",
+                seed=0, verbose=False)
+    assert seen["args"].label_names == ["labels"]

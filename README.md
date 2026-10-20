@@ -193,8 +193,14 @@ assessor.save("my_coder.simchology")  # reuse later with sim.load(...)
 
 Training data are augmented by default when responses lack final punctuation: every
 training pair gets a twin whose response lost its final period or had its last word cut,
-which makes the model robust to such artefacts. `method="lora_classifier"` fine-tunes a
-small decoder LLM with LoRA instead.
+which makes the model robust to such artefacts.
+
+`method="lora_classifier"` fine-tunes a small decoder LLM with LoRA instead (default
+`Qwen/Qwen3-0.6B`). Other backbones, including newer ones, are set with
+`method_params={"backbone": ...}`, e.g. `Qwen/Qwen3.5-0.8B` to compare prompting and
+fine-tuning of the same model (`method="llm"` with the Ollama model `qwen3.5:0.8b`).
+On Apple silicon, Qwen3.5 trains about 2.5 times more slowly than Qwen3-0.6B, because
+the fast kernels for its linear-attention layers exist only for CUDA GPUs.
 
 ## Prompt-based inference (local by default)
 
