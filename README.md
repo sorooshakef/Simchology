@@ -6,8 +6,7 @@ Simchology scores how similar two texts are, for example whether a participant's
 contains a piece of information, how close a paraphrase is to its source, or whether two
 free responses express the same idea. It wraps string measures, bag-of-words and topic
 models, word and sentence embeddings, BERTScore, fine-tuned cross-encoders and prompted
-language models behind a single function, so you can switch methods without learning a
-dozen libraries.
+language models behind a single function, so you can switch methods and compare them seamlessly.
 
 ```python
 import simchology as sim
