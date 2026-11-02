@@ -23,6 +23,7 @@ import numpy as np
 
 from .._optional import require
 from .._utils.logging import note
+from .._utils.provenance import hf_model_record
 from ..config import DEFAULT_MODELS, LABEL, LEFT, RIGHT
 from ..data.labels import detect_label_type, scale_labels, unscale_labels
 from ..exceptions import ConfigurationError, NotFittedError
@@ -86,9 +87,8 @@ class _TransformerPairMethod(PairMethod):
             return (self.label_min_, self.label_max_)
         return (0.0, 1.0) if self.activation_ in ("sigmoid", "softmax") else (None, None)
 
-    def model_ids(self) -> dict[str, str]:
-        rev = self.params.get("revision")
-        return {"model": self._model_id() + (f"@{rev}" if rev else "")}
+    def model_details(self) -> dict[str, dict]:
+        return {"model": hf_model_record(self._model_id(), self.params.get("revision"))}
 
     # -- inputs ----------------------------------------------------------------------
     def _texts(self, left: list[str], right: list[str]):

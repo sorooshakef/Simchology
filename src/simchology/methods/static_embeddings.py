@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from .._optional import require
+from .._utils.provenance import spacy_model_record
 from ..exceptions import ConfigurationError, ModelNotAvailableError
 from ..explain.explanation import Explanation
 from .base import MethodInfo, RepresentationMethod
@@ -195,6 +196,24 @@ class _WordVectorMixin:
         if self._store is None:
             self._store = load_vectors(self.params["vectors"], self.preprocessor)
         return self._store
+
+    def model_details(self) -> dict[str, dict]:
+        source = self.params["vectors"]
+        if source is None or source == "spacy":
+            if self.preprocessor.backend != "spacy":
+                return {}
+            return {"word_vectors": spacy_model_record(self.preprocessor.nlp(), self.preprocessor.spacy_model_name)}
+        if hasattr(source, "vocab") and hasattr(source.vocab, "vectors"):
+            return {"word_vectors": spacy_model_record(source)}
+        if isinstance(source, (str, os.PathLike)):
+            s = str(source)
+            gensim = s.startswith("gensim:")
+            record = {"name": s.split(":", 1)[1] if gensim else s, "source": "gensim" if gensim else "file",
+                      "version": None}
+            if self._store is not None:
+                record["vector_dimensions"] = self._store.dim
+            return {"word_vectors": record}
+        return {}  # vectors passed as Python objects
 
     def token_vectors(self, text: str) -> tuple[list[str], np.ndarray]:
         """Tokens of ``text`` that have a vector, and their vectors (n x dim)."""

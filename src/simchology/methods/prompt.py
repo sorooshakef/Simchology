@@ -410,10 +410,21 @@ class OllamaJudge(_PromptJudge):
             think=self.params["think"], keep_alive=self.params["keep_alive"], logprobs=True,
         )
 
-    def model_ids(self) -> dict[str, str]:
-        digest = self._model_info.get("digest")
-        model = self.params["model"]
-        return {"llm": f"{model} (ollama, digest {digest[:12]})" if digest else f"{model} (ollama)"}
+    def model_details(self) -> dict[str, dict]:
+        info = self._model_info
+        if not info:  # the server is only contacted when the first pair is scored
+            try:
+                info = self.backend.ensure_model(self.params["model"], auto_pull=False)
+            except Exception:  # not running or not pulled: record the name only
+                info = {}
+        record = {"name": self.params["model"], "source": "ollama", "version": info.get("digest")}
+        if info.get("parameter_count"):
+            record["parameters"] = info["parameter_count"]
+        elif info.get("parameter_size"):
+            record["parameter_size"] = info["parameter_size"]
+        if info.get("quantization"):
+            record["quantization"] = info["quantization"]
+        return {"llm": record}
 
     def describe(self) -> str:
         mode = "few-shot" if self.params["mode"] == "few_shot" else "zero-shot"

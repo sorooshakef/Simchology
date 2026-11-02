@@ -164,8 +164,11 @@ class SimilarityMethod(ABC):
         """Short description used in methods-section summaries."""
         return self.info.description
 
-    def model_ids(self) -> dict[str, str]:
-        """Models (and revisions) used, for provenance records."""
+    def model_details(self) -> dict[str, dict]:
+        """Models used, by role, for provenance records: name, source, version and size.
+
+        See ``simchology._utils.provenance`` (e.g. :func:`hf_model_record`) for the format.
+        """
         return {}
 
     def get_params(self) -> dict[str, Any]:

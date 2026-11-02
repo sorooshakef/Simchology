@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from pathlib import Path
 
 from .._optional import install_hint, require
 from .._utils.logging import note
+from .._utils.provenance import hf_model_record, spacy_model_record
 from ..config import DEFAULT_MODELS
 from ..exceptions import ConfigurationError
 from .spacy_models import default_spacy_model, load_spacy, spacy_model_installed
@@ -111,6 +113,16 @@ class Segmenter:
         if self.kind == "sat":
             return f"SaT ({self.sat_model})"
         return {"none": "no segmentation", "regex": "rule-based sentence splitting"}[self.kind]
+
+    def model_details(self) -> dict | None:
+        """The model that splits the texts, for provenance records (None for rule-based splitting)."""
+        if self.kind == "spacy":
+            return spacy_model_record(load_spacy(self.language, self.spacy_model),
+                                      self.spacy_model or default_spacy_model(self.language))
+        if self.kind == "sat":  # wtpsplit loads hub models from the segment-any-text organisation
+            local = Path(self.sat_model).is_dir()
+            return hf_model_record(self.sat_model if local else f"segment-any-text/{self.sat_model}")
+        return None
 
     def hint_if_unreliable(self, texts: Sequence[str]) -> None:
         if self.kind in ("regex", "spacy"):

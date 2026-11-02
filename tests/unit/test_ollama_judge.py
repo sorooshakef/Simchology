@@ -45,7 +45,8 @@ class FakeOllama:
 
     def show(self, model):
         return {"modelinfo": {"gemma3.context_length": self.context_length,
-                              "gemma3.block_count": 34, "gemma3.embedding_length": 2560},
+                              "gemma3.block_count": 34, "gemma3.embedding_length": 2560,
+                              "general.parameter_count": 4_299_915_632},
                 "details": {"parameter_size": "4.3B", "quantization_level": "Q4_K_M"}}
 
     def pull(self, model):
@@ -115,7 +116,10 @@ def test_binary_end_to_end_with_assess(demo, truth):
     assert call["format"]["properties"]["answer"]["enum"] == ["yes", "no"]
     assert call["options"]["temperature"] == 0.0 and call["options"]["seed"] == 42
     assert call["think"] is False and call["logprobs"] is True
-    assert a.method_.model_ids()["llm"].startswith("gemma3:4b (ollama, digest sha256:0123")
+    assert a.provenance_["models"]["llm"] == {
+        "name": "gemma3:4b", "source": "ollama", "version": "sha256:0123456789abcdef",
+        "parameters": 4_299_915_632, "quantization": "Q4_K_M"}
+    assert "gemma3:4b (Ollama, digest 0123456789ab, 4.3B parameters, Q4_K_M)" in a.describe()
 
 
 def test_unique_pairs_asked_once(demo, truth):
@@ -232,6 +236,16 @@ def test_server_not_running():
     judge = make_judge(FakeOllama(connection_error=True))
     with pytest.raises(BackendUnavailableError, match="ollama.com/download"):
         judge.score_pairs(["a"], ["b"])
+
+
+def test_model_details_before_scoring_and_without_server():
+    fake = FakeOllama()
+    record = make_judge(fake).model_details()["llm"]  # asks the server, as nothing was scored yet
+    assert record["version"] == "sha256:0123456789abcdef" and record["parameters"] == 4_299_915_632
+    assert not fake.calls and not fake.pulled
+    for client in (FakeOllama(connection_error=True), FakeOllama(models=())):
+        assert make_judge(client).model_details() == {
+            "llm": {"name": "gemma3:4b", "source": "ollama", "version": None}}
 
 
 def test_model_not_pulled_and_auto_pull():

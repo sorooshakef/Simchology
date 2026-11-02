@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from .._utils.hashing import stable_hash
+from .._utils.provenance import hf_model_record
 from .._utils.warn import warn
 from ..config import DEFAULT_MODELS
 from ..exceptions import ConfigurationError, SimchologyDataWarning
@@ -195,9 +196,8 @@ class SentenceEmbeddingMethod(_EmbeddingCacheMixin, RepresentationMethod):
             description=f"embedding texts with {self.model_id!r}",
         )
 
-    def model_ids(self) -> dict[str, str]:
-        rev = self.params["revision"]
-        return {"embedding_model": self.model_id + (f"@{rev}" if rev else "")}
+    def model_details(self) -> dict[str, dict]:
+        return {"embedding_model": hf_model_record(self.model_id, self.params["revision"])}
 
     def describe(self) -> str:
         return f"cosine similarity of sentence embeddings from {self.model_id}"
@@ -325,8 +325,8 @@ class HFPoolingEmbeddingMethod(_EmbeddingCacheMixin, RepresentationMethod):
                                batch_size=8, n_items=n_pairs,
                                description=f"embedding texts with {self.model_id!r}")
 
-    def model_ids(self) -> dict[str, str]:
-        return {"encoder": self.model_id}
+    def model_details(self) -> dict[str, dict]:
+        return {"encoder": hf_model_record(self.model_id, self.params["revision"])}
 
     def describe(self) -> str:
         return f"cosine similarity of {self.params['pooling']}-pooled hidden states of {self.model_id}"

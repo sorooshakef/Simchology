@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 from .._utils.logging import note
+from .._utils.provenance import hf_model_record
 from ..config import DEFAULT_MODELS
 from ..exceptions import ConfigurationError
 from ..explain.explanation import Explanation
@@ -284,9 +285,8 @@ class BERTScoreMethod(RepresentationMethod):
             batch_size=8, n_items=n_pairs, description=f"computing BERTScore with {self.model_id!r}",
         )
 
-    def model_ids(self) -> dict[str, str]:
-        rev = self.params["revision"]
-        return {"bertscore_model": self.model_id + (f"@{rev}" if rev else "")}
+    def model_details(self) -> dict[str, dict]:
+        return {"bertscore_model": hf_model_record(self.model_id, self.params["revision"])}
 
     def describe(self) -> str:
         layer = f", layer {self.layer_}" if self.layer_ is not None else ""

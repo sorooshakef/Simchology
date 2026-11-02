@@ -105,7 +105,9 @@ def test_use_like_shortcut_and_metadata(sbert, tiny_st_dir):
     assert make_method("sbert", {"model": "use_like"}).model_id == DEFAULT_MODELS["use_like"]
     req = sbert.resource_request(100)
     assert req.task == "inference" and req.model_id == tiny_st_dir and req.n_items == 100
-    assert sbert.model_ids() == {"embedding_model": tiny_st_dir}
+    n_params = sum(p.numel() for p in sbert._model().parameters())
+    assert sbert.model_details() == {"embedding_model": {"name": tiny_st_dir, "source": "local",
+                                                         "version": None, "parameters": n_params}}
     assert tiny_st_dir in sbert.describe()
 
 

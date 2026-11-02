@@ -38,7 +38,9 @@ class FakeServer:
             raise httpx.ConnectError("connection refused", request=request)
         if request.method == "GET":
             self.gets.append(request)
-            return httpx.Response(200, json={"data": [{"id": "kev-latest"}]})
+            return httpx.Response(200, json={"models": [{
+                "name": "kev-latest", "description": "Kev pointer head", "release_date": "2026-05-01",
+                "run": "jaredpalmer/kev-0.8b", "base": "Qwen/Qwen3.5-0.8B"}]})
         body = json.loads(request.content)
         self.posts.append({"url": str(request.url), "headers": dict(request.headers), "body": body})
         if self.status:
@@ -175,6 +177,15 @@ def test_state_too_long_single_sentence_is_an_error():
         make_judge(server).score_pairs(["One long sentence without a break"], ["ref"])
 
 
+def test_model_details_before_scoring_and_without_server():
+    server = FakeServer()
+    assert make_judge(server).model_details()["systemone"]["version"] == "2026-05-01"
+    assert len(server.gets) == 1 and not server.posts
+    assert make_judge(FakeServer(connect_error=True)).model_details() == {
+        "systemone": {"name": "kev-latest", "source": "systemone", "url": "http://localhost:8009",
+                      "version": None}}
+
+
 def test_server_not_running_message():
     judge = make_judge(FakeServer(connect_error=True))
     with pytest.raises(BackendUnavailableError) as info:
@@ -228,7 +239,9 @@ def test_end_to_end_assess(demo, truth):
                         verbose=False, return_assessor=True)
     assert (out["predicted_similarity"].astype(int) == demo.label).all()
     assert a.report_.metrics["f1"] == pytest.approx(1.0)
-    assert a.method_.model_ids() == {"systemone": "kev-latest @ http://localhost:8009"}
+    assert a.provenance_["models"]["systemone"] == {
+        "name": "kev-latest", "source": "systemone", "url": "http://localhost:8009",
+        "version": "2026-05-01", "run": "jaredpalmer/kev-0.8b", "base": "Qwen/Qwen3.5-0.8B"}
     assert "System One" in a.describe() or "kev-latest" in a.describe()
 
 

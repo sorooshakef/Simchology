@@ -127,6 +127,7 @@ class SystemOneJudge(PairMethod):
         self._client = None
         self._cache: ResponseCache | None = None
         self._ready = False
+        self._card: dict | None = None  # the server's model card (from /v1/models)
         self._fitted = True
 
     # -- configuration -------------------------------------------------------------------
@@ -223,6 +224,16 @@ class SystemOneJudge(PairMethod):
                 f"The System One server at {self.base_url} rejected the request "
                 f"(HTTP {response.status_code}); check the API key."
             )
+        self._card = {}
+        try:
+            body = response.json()
+        except Exception:
+            return
+        # TypeSafe/Kev: {"models": [{"name", "release_date", ...}]}; OpenAI style: {"data": [{"id"}]}
+        cards = (body.get("models") or body.get("data")) if isinstance(body, dict) else None
+        for card in cards if isinstance(cards, list) else []:
+            if isinstance(card, dict) and self.params["model"] in (card.get("name"), card.get("id")):
+                self._card = card
 
     def _post(self, payload: dict) -> dict:
         url = f"{self.base_url}{self.params['endpoint']}"
@@ -325,8 +336,18 @@ class SystemOneJudge(PairMethod):
                 out[i] = values[f"q{k}"]
         return out
 
-    def model_ids(self) -> dict[str, str]:
-        return {"systemone": f"{self.params['model']} @ {self.base_url}"}
+    def model_details(self) -> dict[str, dict]:
+        if self._card is None:  # the server is only contacted when the first pair is scored
+            try:
+                self.health()
+            except Exception:  # not running: record the name only
+                pass
+        card = self._card or {}
+        record = {"name": self.params["model"], "source": "systemone", "url": self.base_url,
+                  "version": card.get("release_date")}
+        # Kev also reports the checkpoint it serves (e.g. "jaredpalmer/kev-4b") and its base model
+        record.update({k: card[k] for k in ("run", "base") if card.get(k)})
+        return {"systemone": record}
 
     def describe(self) -> str:
         kind = "yes/no (noul)" if self.question_type == "noul" else f"{len(self.levels())}-level score"

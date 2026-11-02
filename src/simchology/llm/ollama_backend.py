@@ -114,6 +114,8 @@ class OllamaBackend:
                 info["n_layers"] = int(value)
             elif key.endswith(".embedding_length"):
                 info["hidden_size"] = int(value)
+            elif key == "general.parameter_count":
+                info["parameter_count"] = int(value)
         details = _field(shown, "details") or info.get("details")
         info["parameter_size"] = _field(details, "parameter_size")
         info["quantization"] = _field(details, "quantization_level")

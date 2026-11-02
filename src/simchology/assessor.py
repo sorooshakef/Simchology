@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from ._utils.logging import note
-from ._utils.provenance import collect_provenance
+from ._utils.provenance import collect_provenance, format_model, spacy_model_record
 from ._utils.seeds import derive_seed, set_seed
 from ._utils.warn import warn
 from .baseline.baseline import Baseline
@@ -334,7 +334,7 @@ class SimilarityAssessor:
         self.fit_seconds_ = time.perf_counter() - t0
         self.provenance_ = collect_provenance(
             method=self.method_name, method_params=_jsonable(self.method_.get_params()),
-            models=self.method_.model_ids(), device=self.runtime_.device, language=self.language_,
+            models=self._model_details(), device=self.runtime_.device, language=self.language_,
             preprocessing=self.preprocessor_.describe() if info.preprocessing == "full" else "whitespace only",
             segmentation=self.segmenter_.describe(), seed=self.seed,
         )
@@ -346,6 +346,17 @@ class SimilarityAssessor:
                      augment=augment)
             self.report_, self.splits_ = report, old_splits
         return self
+
+    def _model_details(self) -> dict[str, dict]:
+        """The method's models plus the pipelines used for preprocessing and sentence splitting."""
+        models = dict(self.method_.model_details())
+        pp = self.preprocessor_
+        if self.method_.info.preprocessing == "full" and pp.backend == "spacy":
+            models["preprocessing"] = spacy_model_record(pp.nlp(), pp.spacy_model_name)
+        segmentation = self.segmenter_.model_details()
+        if segmentation is not None:
+            models["segmentation"] = segmentation
+        return models
 
     def _use_augmentation(self, augment: bool | str, std_train: pd.DataFrame) -> bool:
         if augment == "auto":
@@ -634,9 +645,11 @@ class SimilarityAssessor:
             f"Similarity was assessed with Simchology {p.get('simchology')} using "
             f"{self.method_.describe()}."
         ]
-        models = p.get("models") or {}
+        # the preprocessing and segmentation pipelines are named in the sentences below
+        models = [format_model(m) for role, m in (p.get("models") or {}).items()
+                  if role not in ("preprocessing", "segmentation")]
         if models:
-            parts.append("Models: " + ", ".join(f"{v}" for v in models.values()) + ".")
+            parts.append("Models: " + ", ".join(models) + ".")
         if self.method_.info.preprocessing == "full" and self.method_.info.family in (
                 "string", "lexical", "topic", "static", "alignment"):
             pp = self.preprocessor_.describe()

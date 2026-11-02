@@ -239,6 +239,12 @@ sim.explain(response_text, reference_text, method="bertscore")
 print(assessor.describe())                         # a paragraph for your methods section
 ```
 
+`assessor.provenance_["models"]` records every model that was used (including the spaCy
+pipeline for preprocessing and sentence splitting) with its name, version and size: the
+commit and number of parameters of Hugging Face models, the digest, number of parameters and
+quantisation of Ollama models, the version and word-vector table of spaCy pipelines, and the
+release date and served checkpoint of System One models.
+
 Saved assessors (`assessor.save(path)`) contain the configuration, thresholds, baseline,
 evaluation and provenance (package and model versions), and are loaded without pickle:
 `sim.load(path)` (pass `device="cpu"` to run a saved neural model on the CPU).

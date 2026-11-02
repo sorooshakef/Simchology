@@ -48,8 +48,22 @@ def _read_safetensors_header(path: Path) -> dict:
         return json.loads(fh.read(n))
 
 
-def _count_local(directory: Path) -> ParamInfo | None:
+def _weight_files(directory: Path) -> list[Path]:
+    """Safetensors files of a model folder, including Sentence-Transformers modules (e.g. 2_Dense)."""
     files = sorted(directory.glob("*.safetensors"))
+    try:
+        modules = json.loads((directory / "modules.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        modules = []
+    for module in modules if isinstance(modules, list) else []:
+        sub = module.get("path") if isinstance(module, dict) else None
+        if sub:
+            files += sorted((directory / sub).glob("*.safetensors"))
+    return files
+
+
+def _count_local(directory: Path) -> ParamInfo | None:
+    files = _weight_files(directory)
     if not files:
         return None
     total = 0
@@ -74,6 +88,14 @@ def _cached_snapshot(model_id: str, revision: str | None) -> Path | None:
         from huggingface_hub import snapshot_download
 
         return Path(snapshot_download(model_id, revision=revision, local_files_only=True))
+    except Exception:
+        pass
+    # huggingface_hub >= 1.0 rejects snapshots that lack files skipped on purpose (e.g. ONNX)
+    try:
+        from huggingface_hub import try_to_load_from_cache
+
+        config = try_to_load_from_cache(model_id, "config.json", revision=revision)
+        return Path(config).parent if isinstance(config, str) else None
     except Exception:
         return None
 
@@ -147,6 +169,28 @@ def model_parameter_count(model_id: str, *, revision: str | None = None) -> Para
     if n is not None:
         return ParamInfo(n, None, "name")
     return ParamInfo(None, None, "unknown")
+
+
+def cached_revision(model_id: str, revision: str | None = None) -> str | None:
+    """Commit hash of the locally cached copy of a hub model (None for local folders or if not cached)."""
+    if Path(model_id).is_dir():
+        return None
+    snapshot = _cached_snapshot(model_id, revision)
+    return snapshot.name if snapshot is not None and snapshot.parent.name == "snapshots" else None
+
+
+def local_parameter_count(model_id: str, *, revision: str | None = None) -> int | None:
+    """Exact number of parameters from local files only (no estimates, no network).
+
+    Reads the safetensors headers of a local folder or cached snapshot; for models stored
+    as ``pytorch_model.bin`` only, instantiates the cached config on the meta device.
+    """
+    path = Path(model_id)
+    folder = path if path.is_dir() else _cached_snapshot(model_id, revision)
+    info = _count_local(folder) if folder is not None else None
+    if info is None:
+        info = _from_config(model_id, revision)
+    return info.total if info is not None else None
 
 
 def model_shape(model_id: str, *, revision: str | None = None) -> ModelShape:
