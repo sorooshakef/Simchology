@@ -7,6 +7,7 @@ name = "simchology"
 dynamic = ["version"]
 description = "Text similarity assessment for psychologists: many NLP methods, one interface."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
 authors = [{ email = "s.akef@iwm-tuebingen.de" }]
 keywords = ["psychology", "text similarity", "nlp", "coding", "bertscore", "cross-encoder"]

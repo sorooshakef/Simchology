@@ -261,3 +261,7 @@ python -m pytest                                        # fast offline test suit
 All random steps are seeded (`seed=42`). Results of neural models can still differ
 slightly across hardware; prompt-based methods with hosted models can change when the
 provider updates or retires a model — prefer local models for archived analyses.
+
+## License
+
+MIT; see [LICENSE](LICENSE).
